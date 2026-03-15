@@ -1,0 +1,71 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AC Freedom",
+        "description": "Yerel agda {count} cihaz bulundu. Asagidaki seceneklerden birini secin.",
+        "menu_options": {
+          "select_devices": "Bulunan cihazlari sec ({count})",
+          "rescan": "Agi yeniden tara",
+          "manual": "Manuel giris (IP + MAC)",
+          "cloud_login": "AUX Bulut (yeni modeller)"
+        }
+      },
+      "select_devices": {
+        "title": "Cihaz Secimi",
+        "description": "{count} cihaz bulundu. Eklemek istediklerinizi secin.",
+        "data": {
+          "devices": "Cihazlar"
+        }
+      },
+      "manual": {
+        "title": "Manuel Yapilandirma",
+        "description": "AC Freedom klima cihazinizin IP ve MAC adresini girin.",
+        "data": {
+          "name": "Cihaz Adi",
+          "ip_address": "IP Adresi",
+          "mac": "MAC Adresi (AA:BB:CC:DD:EE:FF)"
+        }
+      },
+      "cloud_login": {
+        "title": "AUX Bulut Girisi",
+        "description": "AC Freedom / AUX uygulama hesap bilgilerinizi girin.",
+        "data": {
+          "cloud_email": "E-posta",
+          "cloud_password": "Sifre",
+          "cloud_region": "Bolge"
+        }
+      },
+      "cloud_devices": {
+        "title": "Bulut Cihazlarini Secin",
+        "description": "AUX Bulut uzerinden kontrol etmek istediginiz cihazlari secin.",
+        "data": {
+          "cloud_devices": "Cihazlar"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cihaza baglanilamiyor. IP ve MAC adresini kontrol edin.",
+      "invalid_mac": "Gecersiz MAC adresi formati. AA:BB:CC:DD:EE:FF kullanin.",
+      "cloud_login_failed": "Bulut girisi basarisiz. E-posta, sifre ve bolgeyi kontrol edin.",
+      "cloud_fetch_failed": "Buluttan cihaz listesi alinamadi."
+    },
+    "abort": {
+      "already_configured": "Bu cihaz zaten yapilandirilmis.",
+      "no_devices_selected": "Hicbir cihaz secilmedi.",
+      "no_cloud_devices": "AUX Bulut hesabinizda cihaz bulunamadi.",
+      "cannot_connect_any": "Secilen cihazlarin hicbirine baglanilamadi."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AC Freedom Ayarlari",
+        "data": {
+          "temp_step": "Sicaklik Adimi",
+          "swing": "Kanat Modu Destegi"
+        }
+      }
+    }
+  }
+}

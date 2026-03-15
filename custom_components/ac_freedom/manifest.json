@@ -1,0 +1,12 @@
+{
+  "domain": "ac_freedom",
+  "name": "AC Freedom",
+  "codeowners": ["@azadaydinli"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/azadaydinli/ac_freedom",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "requirements": ["pycryptodome>=3.20.0", "aiohttp>=3.9.0"],
+  "version": "2.0.0"
+}

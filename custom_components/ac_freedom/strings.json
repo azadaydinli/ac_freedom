@@ -1,0 +1,71 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AC Freedom",
+        "description": "Found {count} device(s) on the local network. Choose an action below.",
+        "menu_options": {
+          "select_devices": "Select discovered devices ({count})",
+          "rescan": "Rescan network",
+          "manual": "Manual entry (IP + MAC)",
+          "cloud_login": "AUX Cloud (newer models)"
+        }
+      },
+      "select_devices": {
+        "title": "Select Devices",
+        "description": "Found {count} device(s). Select the ones you want to add.",
+        "data": {
+          "devices": "Devices"
+        }
+      },
+      "manual": {
+        "title": "Manual Configuration",
+        "description": "Enter the IP and MAC address of your AC Freedom air conditioner.",
+        "data": {
+          "name": "Device Name",
+          "ip_address": "IP Address",
+          "mac": "MAC Address (AA:BB:CC:DD:EE:FF)"
+        }
+      },
+      "cloud_login": {
+        "title": "AUX Cloud Login",
+        "description": "Enter your AC Freedom / AUX app credentials.",
+        "data": {
+          "cloud_email": "Email",
+          "cloud_password": "Password",
+          "cloud_region": "Region"
+        }
+      },
+      "cloud_devices": {
+        "title": "Select Cloud Devices",
+        "description": "Choose the devices you want to control via AUX Cloud.",
+        "data": {
+          "cloud_devices": "Devices"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the device. Check the IP and MAC address.",
+      "invalid_mac": "Invalid MAC address format. Use AA:BB:CC:DD:EE:FF.",
+      "cloud_login_failed": "Cloud login failed. Check your email, password and region.",
+      "cloud_fetch_failed": "Failed to fetch devices from cloud."
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "no_devices_selected": "No devices selected.",
+      "no_cloud_devices": "No devices found in your AUX Cloud account.",
+      "cannot_connect_any": "Could not connect to any of the selected devices."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AC Freedom Options",
+        "data": {
+          "temp_step": "Temperature Step",
+          "swing": "Swing Mode Support"
+        }
+      }
+    }
+  }
+}
