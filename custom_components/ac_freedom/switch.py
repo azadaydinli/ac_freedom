@@ -21,6 +21,7 @@ from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_IP_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -113,12 +114,13 @@ class LocalSwitch(CoordinatorEntity, SwitchEntity):
         self._attr_name = name
         self._attr_icon = icon
         self._attr_unique_id = f"{ip}_{mac}_{key}"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"{ip}_{mac}")},
-            "name": dev_name,
-            "manufacturer": "AUX",
-            "model": "AC Freedom (Local)",
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{ip}_{mac}")},
+            name=dev_name,
+            manufacturer="AUX",
+            model="AC Freedom (Local)",
+            sw_version="2.1.0",
+        )
 
     @property
     def is_on(self) -> bool:
@@ -151,12 +153,13 @@ class CloudSwitch(CoordinatorEntity, SwitchEntity):
         self._attr_name = name
         self._attr_icon = icon
         self._attr_unique_id = f"cloud_{self._did}_{key}"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._did)},
-            "name": device.get("friendlyName", "AUX AC"),
-            "manufacturer": "AUX",
-            "model": "AC Freedom (Cloud)",
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._did)},
+            name=device.get("friendlyName", "AUX AC"),
+            manufacturer="AUX",
+            model="AC Freedom (Cloud)",
+            sw_version="2.1.0",
+        )
 
     def _params(self) -> dict:
         if self.coordinator.data and self._did in self.coordinator.data:

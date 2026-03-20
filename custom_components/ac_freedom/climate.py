@@ -34,6 +34,7 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -202,12 +203,13 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
         mac = dev_info.get("mac", "ac")
         name = dev_info.get(CONF_NAME, f"AC Freedom ({ip})")
         self._attr_unique_id = f"{ip}_{mac}"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, f"{ip}_{mac}")},
-            "name": name,
-            "manufacturer": "AUX",
-            "model": "AC Freedom (Local)",
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{ip}_{mac}")},
+            name=name,
+            manufacturer="AUX",
+            model="AC Freedom (Local)",
+            sw_version="2.1.0",
+        )
         step = entry.options.get(CONF_TEMP_STEP, entry.data.get(CONF_TEMP_STEP, TEMP_STEP_HALF))
         self._attr_target_temperature_step = step
 
@@ -364,12 +366,13 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
         self._cloud_api = coordinator.cloud_api
         self._attr_name = device.get("friendlyName", "AUX AC")
         self._attr_unique_id = f"cloud_{self._did}"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, self._did)},
-            "name": device.get("friendlyName", "AUX AC"),
-            "manufacturer": "AUX",
-            "model": "AC Freedom (Cloud)",
-        }
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._did)},
+            name=device.get("friendlyName", "AUX AC"),
+            manufacturer="AUX",
+            model="AC Freedom (Cloud)",
+            sw_version="2.1.0",
+        )
         step = entry.options.get(CONF_TEMP_STEP, TEMP_STEP_HALF)
         self._attr_target_temperature_step = step
 
