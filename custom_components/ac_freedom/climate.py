@@ -228,8 +228,7 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
         enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
         self._enabled_presets = {k: v for k, v in LOCAL_PRESET_MAP.items() if k in enabled}
         self._attr_preset_modes = [PRESET_NONE] + list(self._enabled_presets.keys())
-        # Fan modes = speeds + enabled presets (presets in fan_mode for HomeKit)
-        self._attr_fan_modes = LOCAL_FAN_MODES + list(self._enabled_presets.keys())
+        self._attr_fan_modes = LOCAL_FAN_MODES
 
     @property
     def current_temperature(self) -> float | None:
@@ -260,10 +259,6 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def fan_mode(self) -> str | None:
-        # If a preset is active, return it as fan_mode (for HomeKit visibility)
-        for preset, attr in self._enabled_presets.items():
-            if getattr(self._api.state, attr, 0):
-                return preset
         if self._api.state.mute:
             return "mute"
         if self._api.state.turbo:
@@ -306,18 +301,6 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
-        # Check if it's a preset mode
-        if fan_mode in self._enabled_presets:
-            # Deactivate all presets, then activate selected
-            for attr in LOCAL_PRESET_MAP.values():
-                setattr(self._api.state, attr, 0)
-            setattr(self._api.state, self._enabled_presets[fan_mode], 1)
-            await self._api.set_state()
-            await self.coordinator.async_request_refresh()
-            return
-        # It's a fan speed — deactivate all presets first
-        for attr in LOCAL_PRESET_MAP.values():
-            setattr(self._api.state, attr, 0)
         config = FAN_MODE_TO_DEVICE.get(fan_mode)
         if config is None:
             return
@@ -414,8 +397,7 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
         enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
         self._enabled_presets = {k: v for k, v in CLOUD_PRESET_MAP.items() if k in enabled}
         self._attr_preset_modes = [PRESET_NONE] + list(self._enabled_presets.keys())
-        # Fan modes = speeds + enabled presets (presets in fan_mode for HomeKit)
-        self._attr_fan_modes = CLOUD_FAN_MODES + list(self._enabled_presets.keys())
+        self._attr_fan_modes = CLOUD_FAN_MODES
 
     def _params(self) -> dict:
         """Get current device params from coordinator data."""
@@ -459,12 +441,7 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def fan_mode(self) -> str | None:
-        # If a preset is active, return it as fan_mode (for HomeKit visibility)
-        params = self._params()
-        for preset, cloud_key in self._enabled_presets.items():
-            if params.get(cloud_key, 0):
-                return preset
-        val = params.get(AC_FAN_SPEED)
+        val = self._params().get(AC_FAN_SPEED)
         return CLOUD_FAN_AUX_TO_HA.get(val, FAN_AUTO)
 
     @property
@@ -504,18 +481,9 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
         await self._set_cloud({AC_TEMPERATURE_TARGET: int(temp * 10)})
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
-        # Check if it's a preset mode
-        if fan_mode in self._enabled_presets:
-            update = {v: 0 for v in CLOUD_PRESET_MAP.values()}
-            update[self._enabled_presets[fan_mode]] = 1
-            await self._set_cloud(update)
-            return
-        # It's a fan speed — deactivate all presets first
-        update = {v: 0 for v in CLOUD_PRESET_MAP.values()}
         aux_val = CLOUD_FAN_HA_TO_AUX.get(fan_mode)
         if aux_val is not None:
-            update[AC_FAN_SPEED] = aux_val
-        await self._set_cloud(update)
+            await self._set_cloud({AC_FAN_SPEED: aux_val})
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
         v = 1 if swing_mode in (SWING_VERTICAL, SWING_BOTH) else 0
