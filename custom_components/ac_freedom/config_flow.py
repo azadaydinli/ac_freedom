@@ -27,6 +27,7 @@ from homeassistant.helpers.selector import (
 
 from .broadlink_ac_api import BroadlinkAcApi, DiscoveredDevice, discover_devices
 from .cloud_api import AuxCloudAPI, AuxApiError
+from .climate import ALL_PRESETS, CONF_ENABLED_PRESETS
 from .const import (
     CONF_CLOUD_DEVICES,
     CONF_CLOUD_EMAIL,
@@ -368,31 +369,42 @@ class BroadlinkAcOptionsFlow(OptionsFlow):
         current = {**self._config_entry.data, **self._config_entry.options}
         conn_mode = current.get(CONF_CONN_MODE, CONN_LOCAL)
 
-        if conn_mode == CONN_CLOUD:
-            return self.async_show_form(
-                step_id="init",
-                data_schema=vol.Schema({
-                    vol.Optional(
-                        CONF_TEMP_STEP,
-                        default=current.get(CONF_TEMP_STEP, TEMP_STEP_HALF),
-                    ): vol.In({TEMP_STEP_HALF: "0.5 C", TEMP_STEP_FULL: "1 C"}),
-                }),
-            )
+        preset_options = [
+            SelectOptionDict(value="display", label="Display (Screen On/Off)"),
+            SelectOptionDict(value="sleep", label="Sleep Mode"),
+            SelectOptionDict(value="health", label="Health / Ionizer"),
+            SelectOptionDict(value="eco", label="Eco / Mildew Prevention"),
+            SelectOptionDict(value="clean", label="Self Clean"),
+        ]
+
+        schema_fields = {
+            vol.Optional(
+                CONF_TEMP_STEP,
+                default=current.get(CONF_TEMP_STEP, TEMP_STEP_HALF),
+            ): vol.In({TEMP_STEP_HALF: "0.5 °C", TEMP_STEP_FULL: "1 °C"}),
+            vol.Optional(
+                CONF_ENABLED_PRESETS,
+                default=current.get(CONF_ENABLED_PRESETS, ALL_PRESETS),
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=preset_options,
+                    multiple=True,
+                    mode=SelectSelectorMode.LIST,
+                )
+            ),
+        }
+
+        if conn_mode == CONN_LOCAL:
+            schema_fields[vol.Optional(
+                CONF_SWING,
+                default=current.get(CONF_SWING, SWING_BOTH),
+            )] = vol.In({
+                SWING_HORIZONTAL: "Horizontal",
+                SWING_VERTICAL: "Vertical",
+                SWING_BOTH: "Both",
+            })
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Optional(
-                    CONF_TEMP_STEP,
-                    default=current.get(CONF_TEMP_STEP, TEMP_STEP_HALF),
-                ): vol.In({TEMP_STEP_HALF: "0.5 C", TEMP_STEP_FULL: "1 C"}),
-                vol.Optional(
-                    CONF_SWING,
-                    default=current.get(CONF_SWING, SWING_BOTH),
-                ): vol.In({
-                    SWING_HORIZONTAL: "Horizontal",
-                    SWING_VERTICAL: "Vertical",
-                    SWING_BOTH: "Both",
-                }),
-            }),
+            data_schema=vol.Schema(schema_fields),
         )

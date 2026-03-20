@@ -95,14 +95,17 @@ LOCAL_SWING_MODES = ["off", "vertical", "horizontal", "both"]
 
 # ── Preset modes (shared between local & cloud) ───────────────────
 PRESET_NONE = "none"
+PRESET_DISPLAY = "display"
 PRESET_SLEEP = "sleep"
 PRESET_HEALTH = "health"
 PRESET_ECO = "eco"
 PRESET_CLEAN = "clean"
-PRESET_MODES = [PRESET_NONE, PRESET_SLEEP, PRESET_HEALTH, PRESET_ECO, PRESET_CLEAN]
+
+ALL_PRESETS = [PRESET_DISPLAY, PRESET_SLEEP, PRESET_HEALTH, PRESET_ECO, PRESET_CLEAN]
 
 # Local state attribute names for presets
 LOCAL_PRESET_MAP = {
+    PRESET_DISPLAY: "display",
     PRESET_SLEEP: "sleep",
     PRESET_HEALTH: "health",
     PRESET_ECO: "mildew",
@@ -111,11 +114,15 @@ LOCAL_PRESET_MAP = {
 
 # Cloud param keys for presets
 CLOUD_PRESET_MAP = {
+    PRESET_DISPLAY: AC_SCREEN_DISPLAY,
     PRESET_SLEEP: AC_SLEEP,
     PRESET_HEALTH: AC_HEALTH,
     PRESET_ECO: AC_MILDEW_PROOF,
     PRESET_CLEAN: AC_CLEAN,
 }
+
+# Options key for enabled presets
+CONF_ENABLED_PRESETS = "enabled_presets"
 
 # ── Cloud mode mappings ─────────────────────────────────────────────
 # AUX cloud: 0=COOL, 1=HEAT, 2=DRY, 3=FAN, 4=AUTO
@@ -185,7 +192,6 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
     ]
     _attr_fan_modes = LOCAL_FAN_MODES
     _attr_swing_modes = LOCAL_SWING_MODES
-    _attr_preset_modes = PRESET_MODES
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.FAN_MODE
@@ -211,6 +217,10 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
         )
         step = entry.options.get(CONF_TEMP_STEP, entry.data.get(CONF_TEMP_STEP, TEMP_STEP_HALF))
         self._attr_target_temperature_step = step
+        # Build preset list from options
+        enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
+        self._enabled_presets = {k: v for k, v in LOCAL_PRESET_MAP.items() if k in enabled}
+        self._attr_preset_modes = [PRESET_NONE] + list(self._enabled_presets.keys())
 
     @property
     def current_temperature(self) -> float | None:
@@ -303,18 +313,18 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def preset_mode(self) -> str | None:
-        for preset, attr in LOCAL_PRESET_MAP.items():
+        for preset, attr in self._enabled_presets.items():
             if getattr(self._api.state, attr, 0):
                 return preset
         return PRESET_NONE
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
-        # Turn off all presets first
+        # Turn off all presets first (including disabled ones)
         for attr in LOCAL_PRESET_MAP.values():
             setattr(self._api.state, attr, 0)
         # Activate selected preset
-        if preset_mode != PRESET_NONE and preset_mode in LOCAL_PRESET_MAP:
-            setattr(self._api.state, LOCAL_PRESET_MAP[preset_mode], 1)
+        if preset_mode != PRESET_NONE and preset_mode in self._enabled_presets:
+            setattr(self._api.state, self._enabled_presets[preset_mode], 1)
         await self._api.set_state()
         await self.coordinator.async_request_refresh()
 
@@ -347,7 +357,6 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
     ]
     _attr_fan_modes = CLOUD_FAN_MODES
     _attr_swing_modes = [SWING_OFF, SWING_VERTICAL, SWING_HORIZONTAL, SWING_BOTH]
-    _attr_preset_modes = PRESET_MODES
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.FAN_MODE
@@ -373,6 +382,10 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
         )
         step = entry.options.get(CONF_TEMP_STEP, TEMP_STEP_HALF)
         self._attr_target_temperature_step = step
+        # Build preset list from options
+        enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
+        self._enabled_presets = {k: v for k, v in CLOUD_PRESET_MAP.items() if k in enabled}
+        self._attr_preset_modes = [PRESET_NONE] + list(self._enabled_presets.keys())
 
     def _params(self) -> dict:
         """Get current device params from coordinator data."""
@@ -468,16 +481,16 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
     @property
     def preset_mode(self) -> str | None:
         params = self._params()
-        for preset, cloud_key in CLOUD_PRESET_MAP.items():
+        for preset, cloud_key in self._enabled_presets.items():
             if params.get(cloud_key, 0):
                 return preset
         return PRESET_NONE
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
-        # Turn off all presets, then activate selected
+        # Turn off all presets (including disabled ones), then activate selected
         update = {v: 0 for v in CLOUD_PRESET_MAP.values()}
-        if preset_mode != PRESET_NONE and preset_mode in CLOUD_PRESET_MAP:
-            update[CLOUD_PRESET_MAP[preset_mode]] = 1
+        if preset_mode != PRESET_NONE and preset_mode in self._enabled_presets:
+            update[self._enabled_presets[preset_mode]] = 1
         await self._set_cloud(update)
 
     async def async_turn_on(self) -> None:

@@ -63,6 +63,7 @@
         "title": "AC Freedom Ayarlari",
         "data": {
           "temp_step": "Sicaklik Adimi",
+          "enabled_presets": "Ön Ayar Modları (klima kartında gösterilir)",
           "swing": "Kanat Modu Destegi"
         }
       }
