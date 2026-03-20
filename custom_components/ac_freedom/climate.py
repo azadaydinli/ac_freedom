@@ -118,6 +118,14 @@ CLOUD_PRESET_MAP = {
     PRESET_CLEAN: AC_CLEAN,
 }
 
+# All selectable HVAC modes (OFF is always present)
+ALL_HVAC_MODES = [
+    HVACMode.AUTO, HVACMode.COOL, HVACMode.HEAT,
+    HVACMode.DRY, HVACMode.FAN_ONLY,
+]
+
+CONF_ENABLED_HVAC_MODES = "enabled_hvac_modes"
+
 # Options key for enabled presets
 CONF_ENABLED_PRESETS = "enabled_presets"
 
@@ -183,10 +191,6 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_min_temp = TEMP_MIN
     _attr_max_temp = TEMP_MAX
-    _attr_hvac_modes = [
-        HVACMode.OFF, HVACMode.AUTO, HVACMode.COOL,
-        HVACMode.HEAT, HVACMode.DRY, HVACMode.FAN_ONLY,
-    ]
     _attr_fan_modes = LOCAL_FAN_MODES
     _attr_swing_modes = LOCAL_SWING_MODES
     _attr_supported_features = (
@@ -214,6 +218,14 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
         )
         step = entry.options.get(CONF_TEMP_STEP, entry.data.get(CONF_TEMP_STEP, TEMP_STEP_HALF))
         self._attr_target_temperature_step = step
+        # Build HVAC mode list from options (OFF is always included)
+        enabled_hvac = entry.options.get(
+            CONF_ENABLED_HVAC_MODES,
+            [m.value for m in ALL_HVAC_MODES],
+        )
+        self._attr_hvac_modes = [HVACMode.OFF] + [
+            m for m in ALL_HVAC_MODES if m.value in enabled_hvac
+        ]
         # Build preset list from options
         enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
         self._enabled_presets = {k: v for k, v in LOCAL_PRESET_MAP.items() if k in enabled}
@@ -348,10 +360,6 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
     _attr_min_temp = TEMP_MIN
     _attr_max_temp = TEMP_MAX
     _attr_target_temperature_step = 0.5
-    _attr_hvac_modes = [
-        HVACMode.OFF, HVACMode.AUTO, HVACMode.COOL,
-        HVACMode.HEAT, HVACMode.DRY, HVACMode.FAN_ONLY,
-    ]
     _attr_fan_modes = CLOUD_FAN_MODES
     _attr_swing_modes = [SWING_OFF, SWING_VERTICAL, SWING_HORIZONTAL, SWING_BOTH]
     _attr_supported_features = (
@@ -379,6 +387,14 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
         )
         step = entry.options.get(CONF_TEMP_STEP, TEMP_STEP_HALF)
         self._attr_target_temperature_step = step
+        # Build HVAC mode list from options (OFF is always included)
+        enabled_hvac = entry.options.get(
+            CONF_ENABLED_HVAC_MODES,
+            [m.value for m in ALL_HVAC_MODES],
+        )
+        self._attr_hvac_modes = [HVACMode.OFF] + [
+            m for m in ALL_HVAC_MODES if m.value in enabled_hvac
+        ]
         # Build preset list from options
         enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
         self._enabled_presets = {k: v for k, v in CLOUD_PRESET_MAP.items() if k in enabled}

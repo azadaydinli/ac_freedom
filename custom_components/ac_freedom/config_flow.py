@@ -27,7 +27,7 @@ from homeassistant.helpers.selector import (
 
 from .broadlink_ac_api import BroadlinkAcApi, DiscoveredDevice, discover_devices
 from .cloud_api import AuxCloudAPI, AuxApiError
-from .climate import ALL_PRESETS, CONF_ENABLED_PRESETS
+from .climate import ALL_HVAC_MODES, ALL_PRESETS, CONF_ENABLED_HVAC_MODES, CONF_ENABLED_PRESETS
 from .const import (
     CONF_CLOUD_DEVICES,
     CONF_CLOUD_EMAIL,
@@ -369,6 +369,18 @@ class BroadlinkAcOptionsFlow(OptionsFlow):
         current = {**self._config_entry.data, **self._config_entry.options}
         conn_mode = current.get(CONF_CONN_MODE, CONN_LOCAL)
 
+        hvac_options = [
+            SelectOptionDict(value="auto", label="Auto"),
+            SelectOptionDict(value="cool", label="Cool"),
+            SelectOptionDict(value="heat", label="Heat"),
+            SelectOptionDict(value="dry", label="Dry"),
+            SelectOptionDict(value="fan_only", label="Fan Only"),
+        ]
+        default_hvac = current.get(
+            CONF_ENABLED_HVAC_MODES,
+            [m.value for m in ALL_HVAC_MODES],
+        )
+
         preset_options = [
             SelectOptionDict(value="sleep", label="Sleep Mode"),
             SelectOptionDict(value="health", label="Health / Ionizer"),
@@ -381,6 +393,16 @@ class BroadlinkAcOptionsFlow(OptionsFlow):
                 CONF_TEMP_STEP,
                 default=current.get(CONF_TEMP_STEP, TEMP_STEP_HALF),
             ): vol.In({TEMP_STEP_HALF: "0.5 °C", TEMP_STEP_FULL: "1 °C"}),
+            vol.Optional(
+                CONF_ENABLED_HVAC_MODES,
+                default=default_hvac,
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=hvac_options,
+                    multiple=True,
+                    mode=SelectSelectorMode.LIST,
+                )
+            ),
             vol.Optional(
                 CONF_ENABLED_PRESETS,
                 default=current.get(CONF_ENABLED_PRESETS, ALL_PRESETS),

@@ -63,7 +63,8 @@
         "title": "AC Freedom Options",
         "data": {
           "temp_step": "Temperature Step",
-          "enabled_presets": "Preset Modes (shown in climate card)",
+          "enabled_hvac_modes": "HVAC Modes",
+          "enabled_presets": "Preset Modes",
           "swing": "Swing Mode Support"
         }
       }
