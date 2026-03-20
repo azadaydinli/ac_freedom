@@ -94,12 +94,12 @@ FAN_MODE_TO_DEVICE = {
 LOCAL_SWING_MODES = ["off", "vertical", "horizontal", "both"]
 
 # ── Preset modes (shared between local & cloud) ───────────────────
-PRESET_NONE = "none"
-PRESET_DISPLAY = "display"
-PRESET_SLEEP = "sleep"
-PRESET_HEALTH = "health"
-PRESET_ECO = "eco"
-PRESET_CLEAN = "clean"
+PRESET_NONE = "None"
+PRESET_DISPLAY = "🖥️ Display"
+PRESET_SLEEP = "😴 Sleep"
+PRESET_HEALTH = "💚 Health"
+PRESET_ECO = "🌿 Eco"
+PRESET_CLEAN = "🧹 Clean"
 
 ALL_PRESETS = [PRESET_DISPLAY, PRESET_SLEEP, PRESET_HEALTH, PRESET_ECO, PRESET_CLEAN]
 

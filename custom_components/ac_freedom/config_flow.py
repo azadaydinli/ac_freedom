@@ -370,11 +370,11 @@ class BroadlinkAcOptionsFlow(OptionsFlow):
         conn_mode = current.get(CONF_CONN_MODE, CONN_LOCAL)
 
         preset_options = [
-            SelectOptionDict(value="display", label="Display (Screen On/Off)"),
-            SelectOptionDict(value="sleep", label="Sleep Mode"),
-            SelectOptionDict(value="health", label="Health / Ionizer"),
-            SelectOptionDict(value="eco", label="Eco / Mildew Prevention"),
-            SelectOptionDict(value="clean", label="Self Clean"),
+            SelectOptionDict(value="🖥️ Display", label="🖥️ Display (Screen On/Off)"),
+            SelectOptionDict(value="😴 Sleep", label="😴 Sleep Mode"),
+            SelectOptionDict(value="💚 Health", label="💚 Health / Ionizer"),
+            SelectOptionDict(value="🌿 Eco", label="🌿 Eco / Mildew Prevention"),
+            SelectOptionDict(value="🧹 Clean", label="🧹 Self Clean"),
         ]
 
         schema_fields = {
