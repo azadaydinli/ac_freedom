@@ -1,7 +1,7 @@
 """Constants for the AC Freedom integration."""
 
 DOMAIN = "ac_freedom"
-PLATFORMS = ["climate", "switch"]
+PLATFORMS = ["climate", "switch"]  # switch = Display only
 
 CONF_MAC = "mac"
 
@@ -66,17 +66,5 @@ SWING_HORIZONTAL = 1
 SWING_VERTICAL = 2
 SWING_BOTH = 3
 
-# Optional switch entities
-SWITCH_DISPLAY = "display"
-SWITCH_HEALTH = "health"
-SWITCH_CLEAN = "clean"
-SWITCH_MILDEW = "mildew"
-SWITCH_SLEEP = "sleep"
-
 CONF_SWING = "swing"
 CONF_TEMP_STEP = "temp_step"
-CONF_DISPLAY = "display"
-CONF_HEALTH = "health"
-CONF_CLEAN = "clean"
-CONF_MILDEW = "mildew"
-CONF_SLEEP = "sleep"

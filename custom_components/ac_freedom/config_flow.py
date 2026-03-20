@@ -7,7 +7,6 @@ Supports two connection modes:
 
 from __future__ import annotations
 
-import base64
 import logging
 import re
 from typing import Any
@@ -31,7 +30,6 @@ from .climate import ALL_HVAC_MODES, ALL_PRESETS, CONF_ENABLED_HVAC_MODES, CONF_
 from .const import (
     CONF_CLOUD_DEVICES,
     CONF_CLOUD_EMAIL,
-    CONF_CLOUD_FAMILY,
     CONF_CLOUD_PASSWORD,
     CONF_CLOUD_REGION,
     CONF_CONN_MODE,

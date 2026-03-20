@@ -44,7 +44,6 @@ from .cloud_api.const import (
     AC_HEALTH,
     AC_MILDEW_PROOF,
     AC_POWER,
-    AC_SCREEN_DISPLAY,
     AC_SLEEP,
     AC_SWING_HORIZONTAL as CLOUD_SWING_H,
     AC_SWING_VERTICAL as CLOUD_SWING_V,
