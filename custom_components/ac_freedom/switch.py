@@ -1,14 +1,6 @@
 """Switch platform for AC Freedom.
 
-Provides toggle switches for AC features:
-  - Display (screen on/off)
-  - Sleep mode
-  - Health / Ionizer
-  - Self Clean
-  - Eco / Mildew Prevention
-
-These switches share the same device as the climate entity,
-so HomeKit bridge groups them into one accessory card.
+Provides a toggle switch for the AC display (screen on/off).
 """
 
 from __future__ import annotations
@@ -24,65 +16,10 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .cloud_api.const import (
-    AC_CLEAN,
-    AC_HEALTH,
-    AC_MILDEW_PROOF,
-    AC_SCREEN_DISPLAY,
-    AC_SLEEP,
-)
-from .const import (
-    CONN_CLOUD,
-    CONN_LOCAL,
-    DOMAIN,
-    SWITCH_CLEAN,
-    SWITCH_DISPLAY,
-    SWITCH_HEALTH,
-    SWITCH_MILDEW,
-    SWITCH_SLEEP,
-)
+from .cloud_api.const import AC_SCREEN_DISPLAY
+from .const import CONN_CLOUD, CONN_LOCAL, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
-
-# Local switch types: key -> (name, icon, state_attr)
-LOCAL_SWITCH_TYPES = {
-    SWITCH_DISPLAY: ("Display", "mdi:monitor", "display"),
-    SWITCH_SLEEP: ("Sleep Mode", "mdi:power-sleep", "sleep"),
-    SWITCH_HEALTH: ("Health / Ionizer", "mdi:air-filter", "health"),
-    SWITCH_CLEAN: ("Self Clean", "mdi:vacuum", "clean"),
-    SWITCH_MILDEW: ("Eco / Mildew Prevention", "mdi:water-off", "mildew"),
-}
-
-# Cloud switch types: key -> (name, icon, cloud_param_key)
-CLOUD_SWITCH_TYPES = {
-    SWITCH_DISPLAY: ("Display", "mdi:monitor", AC_SCREEN_DISPLAY),
-    SWITCH_SLEEP: ("Sleep Mode", "mdi:power-sleep", AC_SLEEP),
-    SWITCH_HEALTH: ("Health / Ionizer", "mdi:air-filter", AC_HEALTH),
-    SWITCH_CLEAN: ("Self Clean", "mdi:vacuum", AC_CLEAN),
-    SWITCH_MILDEW: ("Eco / Mildew Prevention", "mdi:water-off", AC_MILDEW_PROOF),
-}
-
-
-def _local_device_info(dev_info: dict) -> DeviceInfo:
-    """Build DeviceInfo for a local device (shared with climate entity)."""
-    ip = dev_info[CONF_IP_ADDRESS]
-    mac = dev_info.get("mac", "ac")
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"{ip}_{mac}")},
-        name=dev_info.get(CONF_NAME, f"AC Freedom ({ip})"),
-        manufacturer="AUX",
-        model="AC Freedom (Local)",
-    )
-
-
-def _cloud_device_info(device: dict) -> DeviceInfo:
-    """Build DeviceInfo for a cloud device (shared with climate entity)."""
-    return DeviceInfo(
-        identifiers={(DOMAIN, device["endpointId"])},
-        name=device.get("friendlyName", "AUX AC"),
-        manufacturer="AUX",
-        model="AC Freedom (Cloud)",
-    )
 
 
 async def async_setup_entry(
@@ -90,7 +27,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up AC Freedom switch entities."""
+    """Set up AC Freedom display switch."""
     data = hass.data[DOMAIN][entry.entry_id]
     conn_mode = data.get("mode", CONN_LOCAL)
 
@@ -99,78 +36,71 @@ async def async_setup_entry(
     if conn_mode == CONN_CLOUD:
         coordinator = data["coordinator"]
         for dev in data.get("devices", []):
-            dev_info = _cloud_device_info(dev)
-            for key, (name, icon, cloud_key) in CLOUD_SWITCH_TYPES.items():
-                entities.append(
-                    CloudSwitch(coordinator, dev, dev_info, key, name, icon, cloud_key)
-                )
+            entities.append(CloudDisplaySwitch(coordinator, dev))
     else:
         for dev_entry in data.get("local_devices", []):
-            dev_info = _local_device_info(dev_entry["info"])
-            for key, (name, icon, state_attr) in LOCAL_SWITCH_TYPES.items():
-                entities.append(
-                    LocalSwitch(
-                        dev_entry["coordinator"], dev_info,
-                        key, name, icon, state_attr, dev_entry["info"],
-                    )
-                )
+            entities.append(
+                LocalDisplaySwitch(dev_entry["coordinator"], dev_entry["info"])
+            )
 
     if entities:
         async_add_entities(entities)
 
 
-class LocalSwitch(CoordinatorEntity, SwitchEntity):
-    """A switch for local AC features."""
+class LocalDisplaySwitch(CoordinatorEntity, SwitchEntity):
+    """Switch for the local AC display (screen on/off)."""
 
     _attr_has_entity_name = True
+    _attr_name = "Display"
+    _attr_icon = "mdi:monitor"
 
-    def __init__(
-        self, coordinator, dev_info: DeviceInfo,
-        key: str, name: str, icon: str, state_attr: str, raw_info: dict,
-    ) -> None:
+    def __init__(self, coordinator, dev_info: dict) -> None:
         super().__init__(coordinator)
         self._api = coordinator.api
-        self._state_attr = state_attr
-        ip = raw_info[CONF_IP_ADDRESS]
-        mac = raw_info.get("mac", "ac")
-        self._attr_name = name
-        self._attr_icon = icon
-        self._attr_unique_id = f"{ip}_{mac}_{key}"
-        self._attr_device_info = dev_info
+        ip = dev_info[CONF_IP_ADDRESS]
+        mac = dev_info.get("mac", "ac")
+        self._attr_unique_id = f"{ip}_{mac}_display"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{ip}_{mac}")},
+            name=dev_info.get(CONF_NAME, f"AC Freedom ({ip})"),
+            manufacturer="AUX",
+            model="AC Freedom (Local)",
+        )
 
     @property
     def is_on(self) -> bool:
-        return bool(getattr(self._api.state, self._state_attr, 0))
+        return bool(getattr(self._api.state, "display", 0))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        setattr(self._api.state, self._state_attr, 1)
+        self._api.state.display = 1
         await self._api.set_state()
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        setattr(self._api.state, self._state_attr, 0)
+        self._api.state.display = 0
         await self._api.set_state()
         await self.coordinator.async_request_refresh()
 
 
-class CloudSwitch(CoordinatorEntity, SwitchEntity):
-    """A switch for cloud AC features."""
+class CloudDisplaySwitch(CoordinatorEntity, SwitchEntity):
+    """Switch for the cloud AC display (screen on/off)."""
 
     _attr_has_entity_name = True
+    _attr_name = "Display"
+    _attr_icon = "mdi:monitor"
 
-    def __init__(
-        self, coordinator, device: dict, dev_info: DeviceInfo,
-        key: str, name: str, icon: str, cloud_key: str,
-    ) -> None:
+    def __init__(self, coordinator, device: dict) -> None:
         super().__init__(coordinator)
         self._device = device
         self._did = device["endpointId"]
         self._cloud_api = coordinator.cloud_api
-        self._cloud_key = cloud_key
-        self._attr_name = name
-        self._attr_icon = icon
-        self._attr_unique_id = f"cloud_{self._did}_{key}"
-        self._attr_device_info = dev_info
+        self._attr_unique_id = f"cloud_{self._did}_display"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._did)},
+            name=device.get("friendlyName", "AUX AC"),
+            manufacturer="AUX",
+            model="AC Freedom (Cloud)",
+        )
 
     def _params(self) -> dict:
         if self.coordinator.data and self._did in self.coordinator.data:
@@ -179,16 +109,16 @@ class CloudSwitch(CoordinatorEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        return bool(self._params().get(self._cloud_key, 0))
+        return bool(self._params().get(AC_SCREEN_DISPLAY, 0))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         if self.coordinator.data and self._did in self.coordinator.data:
             self._device = self.coordinator.data[self._did]
-        await self._cloud_api.set_device_params(self._device, {self._cloud_key: 1})
+        await self._cloud_api.set_device_params(self._device, {AC_SCREEN_DISPLAY: 1})
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         if self.coordinator.data and self._did in self.coordinator.data:
             self._device = self.coordinator.data[self._did]
-        await self._cloud_api.set_device_params(self._device, {self._cloud_key: 0})
+        await self._cloud_api.set_device_params(self._device, {AC_SCREEN_DISPLAY: 0})
         await self.coordinator.async_request_refresh()
