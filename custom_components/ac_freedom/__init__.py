@@ -32,7 +32,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.CLIMATE, Platform.FAN, Platform.SWITCH]
+PLATFORMS = [Platform.CLIMATE, Platform.SWITCH]
 
 
 class BroadlinkAcCoordinator(DataUpdateCoordinator):

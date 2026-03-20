@@ -190,7 +190,6 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_min_temp = TEMP_MIN
     _attr_max_temp = TEMP_MAX
-    _attr_fan_modes = LOCAL_FAN_MODES
     _attr_swing_modes = LOCAL_SWING_MODES
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
@@ -229,6 +228,8 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
         enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
         self._enabled_presets = {k: v for k, v in LOCAL_PRESET_MAP.items() if k in enabled}
         self._attr_preset_modes = [PRESET_NONE] + list(self._enabled_presets.keys())
+        # Fan modes = speeds + enabled presets (presets in fan_mode for HomeKit)
+        self._attr_fan_modes = LOCAL_FAN_MODES + list(self._enabled_presets.keys())
 
     @property
     def current_temperature(self) -> float | None:
@@ -259,6 +260,10 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def fan_mode(self) -> str | None:
+        # If a preset is active, return it as fan_mode (for HomeKit visibility)
+        for preset, attr in self._enabled_presets.items():
+            if getattr(self._api.state, attr, 0):
+                return preset
         if self._api.state.mute:
             return "mute"
         if self._api.state.turbo:
@@ -301,6 +306,18 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
+        # Check if it's a preset mode
+        if fan_mode in self._enabled_presets:
+            # Deactivate all presets, then activate selected
+            for attr in LOCAL_PRESET_MAP.values():
+                setattr(self._api.state, attr, 0)
+            setattr(self._api.state, self._enabled_presets[fan_mode], 1)
+            await self._api.set_state()
+            await self.coordinator.async_request_refresh()
+            return
+        # It's a fan speed — deactivate all presets first
+        for attr in LOCAL_PRESET_MAP.values():
+            setattr(self._api.state, attr, 0)
         config = FAN_MODE_TO_DEVICE.get(fan_mode)
         if config is None:
             return
@@ -359,7 +376,6 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
     _attr_min_temp = TEMP_MIN
     _attr_max_temp = TEMP_MAX
     _attr_target_temperature_step = 0.5
-    _attr_fan_modes = CLOUD_FAN_MODES
     _attr_swing_modes = [SWING_OFF, SWING_VERTICAL, SWING_HORIZONTAL, SWING_BOTH]
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
@@ -398,6 +414,8 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
         enabled = entry.options.get(CONF_ENABLED_PRESETS, ALL_PRESETS)
         self._enabled_presets = {k: v for k, v in CLOUD_PRESET_MAP.items() if k in enabled}
         self._attr_preset_modes = [PRESET_NONE] + list(self._enabled_presets.keys())
+        # Fan modes = speeds + enabled presets (presets in fan_mode for HomeKit)
+        self._attr_fan_modes = CLOUD_FAN_MODES + list(self._enabled_presets.keys())
 
     def _params(self) -> dict:
         """Get current device params from coordinator data."""
@@ -441,7 +459,12 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def fan_mode(self) -> str | None:
-        val = self._params().get(AC_FAN_SPEED)
+        # If a preset is active, return it as fan_mode (for HomeKit visibility)
+        params = self._params()
+        for preset, cloud_key in self._enabled_presets.items():
+            if params.get(cloud_key, 0):
+                return preset
+        val = params.get(AC_FAN_SPEED)
         return CLOUD_FAN_AUX_TO_HA.get(val, FAN_AUTO)
 
     @property
@@ -481,9 +504,18 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
         await self._set_cloud({AC_TEMPERATURE_TARGET: int(temp * 10)})
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
+        # Check if it's a preset mode
+        if fan_mode in self._enabled_presets:
+            update = {v: 0 for v in CLOUD_PRESET_MAP.values()}
+            update[self._enabled_presets[fan_mode]] = 1
+            await self._set_cloud(update)
+            return
+        # It's a fan speed — deactivate all presets first
+        update = {v: 0 for v in CLOUD_PRESET_MAP.values()}
         aux_val = CLOUD_FAN_HA_TO_AUX.get(fan_mode)
         if aux_val is not None:
-            await self._set_cloud({AC_FAN_SPEED: aux_val})
+            update[AC_FAN_SPEED] = aux_val
+        await self._set_cloud(update)
 
     async def async_set_swing_mode(self, swing_mode: str) -> None:
         v = 1 if swing_mode in (SWING_VERTICAL, SWING_BOTH) else 0
