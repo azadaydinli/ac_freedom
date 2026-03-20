@@ -208,7 +208,6 @@ class BroadlinkAcClimate(CoordinatorEntity, ClimateEntity):
             name=name,
             manufacturer="AUX",
             model="AC Freedom (Local)",
-            sw_version="2.1.0",
         )
         step = entry.options.get(CONF_TEMP_STEP, entry.data.get(CONF_TEMP_STEP, TEMP_STEP_HALF))
         self._attr_target_temperature_step = step
@@ -371,7 +370,6 @@ class CloudAcClimate(CoordinatorEntity, ClimateEntity):
             name=device.get("friendlyName", "AUX AC"),
             manufacturer="AUX",
             model="AC Freedom (Cloud)",
-            sw_version="2.1.0",
         )
         step = entry.options.get(CONF_TEMP_STEP, TEMP_STEP_HALF)
         self._attr_target_temperature_step = step
