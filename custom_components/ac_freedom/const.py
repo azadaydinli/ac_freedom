@@ -1,7 +1,7 @@
 """Constants for the AC Freedom integration."""
 
 DOMAIN = "ac_freedom"
-PLATFORMS = ["climate", "switch"]  # switch = Display only
+PLATFORMS = ["climate", "fan", "switch"]  # fan = preset modes, switch = Display only
 
 CONF_MAC = "mac"
 
